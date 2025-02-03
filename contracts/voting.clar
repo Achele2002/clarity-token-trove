@@ -2,6 +2,7 @@
 
 ;; Constants
 (define-constant err-already-voted (err u201))
+(define-constant err-invalid-rating (err u202))
 
 ;; Maps
 (define-map user-votes
@@ -18,11 +19,14 @@
 (define-public (vote-for-listing 
   (listing-id uint)
   (rating uint))
-  (let ((vote-key { user: tx-sender, listing-id: listing-id }))
-    (asserts! (is-none (map-get? user-votes vote-key)) err-already-voted)
-    (map-set user-votes vote-key { voted: true })
-    (update-rating listing-id rating)
-    (ok true)
+  (begin
+    (asserts! (and (>= rating u1) (<= rating u5)) err-invalid-rating)
+    (let ((vote-key { user: tx-sender, listing-id: listing-id }))
+      (asserts! (is-none (map-get? user-votes vote-key)) err-already-voted)
+      (map-set user-votes vote-key { voted: true })
+      (update-rating listing-id rating)
+      (ok true)
+    )
   )
 )
 
